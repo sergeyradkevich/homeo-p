@@ -1,0 +1,9 @@
+# Gradle
+.gradle
+build
+
+# Vim
+*.swp
+
+# Mac OS
+.DS_Store
