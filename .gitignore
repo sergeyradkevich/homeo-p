@@ -2,6 +2,9 @@
 .gradle
 build
 
+# Idea
+.idea
+
 # Vim
 *.swp
 
