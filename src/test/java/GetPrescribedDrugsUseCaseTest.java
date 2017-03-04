@@ -48,7 +48,7 @@ public class GetPrescribedDrugsUseCaseTest {
         List<Drug> drugs = useCase.getPrescribedDrugs();
 
         List<String> persistedNames = drugs.stream()
-                .map(drug -> drug.getName())
+                .map(Drug::getName)
                 .sorted()
                 .collect(Collectors.toList());
         assertEquals(Arrays.asList(names), persistedNames);
@@ -88,7 +88,7 @@ class Gateway {
 
     public List<Drug> findAll() {
         return entities.stream()
-                .map(e -> clone(e))
+                .map(this::clone)
                 .collect(Collectors.toList());
     }
 
