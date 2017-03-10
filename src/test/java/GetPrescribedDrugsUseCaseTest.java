@@ -32,26 +32,22 @@ public class GetPrescribedDrugsUseCaseTest {
 
         List<Drug> drugs = useCase.getPrescribedDrugs();
 
-        assertEquals("Arsen Alb", drugs.get(0).getName());
+        assertEquals(drug, drugs.get(0));
         assertEquals(1, drugs.size());
     }
 
-    //todo: introduce equality based on identity, not names
     @Test
     public void givenManyPrescribedDrugsReturnsThem() {
-        String[] names = {"Arsen Alb", "Arsen Alb 1", "Arsen Alb 2"};
+        String[] names = {"Arsen Alb 1", "Arsen Alb 2", "Arsen Alb 3"};
 
-        Stream.of(names)
-                .map(name -> (new Drug(name)))
-                .forEach(drug -> gateway.save(drug));
+        List<Drug> persisted = Stream.of(names)
+                .map(name -> gateway.save(new Drug(name)))
+                .sorted(Comparator.comparing(Drug::getId))
+                .collect(Collectors.toList());
 
         List<Drug> drugs = useCase.getPrescribedDrugs();
 
-        List<String> persistedNames = drugs.stream()
-                .map(Drug::getName)
-                .sorted()
-                .collect(Collectors.toList());
-        assertEquals(Arrays.asList(names), persistedNames);
+        assertEquals(persisted, drugs);
     }
 
     @Test
@@ -89,12 +85,14 @@ class Gateway {
     public List<Drug> findAll() {
         return entities.stream()
                 .map(this::clone)
+                .sorted(Comparator.comparing(Drug::getId))
                 .collect(Collectors.toList());
     }
 
     private void persist(Drug drug) {
-       Drug clone = clone(drug);
-       entities.add(clone);
+        drug.setId(UUID.randomUUID().toString());
+        Drug clone = clone(drug);
+        entities.add(clone);
     }
 
     private Drug clone(Drug drug) {
