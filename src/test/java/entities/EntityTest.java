@@ -40,7 +40,10 @@ public class EntityTest {
 
     @Test
     public void entitiesDoNotEqualsWhenNull() {
-        assertFalse(new Drug().equals(null));
+        Drug entity = new Drug();
+        entity.setId("1");
+
+        assertFalse(entity.equals(null));
     }
 
     @Test
