@@ -10,8 +10,8 @@ public class EntityTest {
 
     @Test
     public void entitiesAreEqualWhenIdsAreTheSame() {
-        Drug one = new Drug();
-        Drug another = new Drug();
+        Entity one = new Entity();
+        Entity another = new Entity();
 
         one.setId("1");
         another.setId("1");
@@ -21,8 +21,8 @@ public class EntityTest {
 
     @Test
     public void entitiesAreNotEqualWhenIdsAreDifferent() {
-        Drug one = new Drug();
-        Drug another = new Drug();
+        Entity one = new Entity();
+        Entity another = new Entity();
 
         one.setId("1");
         another.setId("2");
@@ -32,7 +32,7 @@ public class EntityTest {
 
     @Test
     public void entityEqualsToItself() {
-        Drug entity = new Drug();
+        Entity entity = new Entity();
         entity.setId("1");
 
         assertTrue(entity.equals(entity));
@@ -40,7 +40,7 @@ public class EntityTest {
 
     @Test
     public void entitiesDoNotEqualsWhenNull() {
-        Drug entity = new Drug();
+        Entity entity = new Entity();
         entity.setId("1");
 
         assertFalse(entity.equals(null));
@@ -48,10 +48,10 @@ public class EntityTest {
 
     @Test
     public void entitiesDoNotEqualsWhenIdsAreNull() {
-        assertFalse(new Drug().equals(new Drug()));
+        assertFalse(new Entity().equals(new Entity()));
 
-        Drug one = new Drug();
-        Drug another = new Drug();
+        Entity one = new Entity();
+        Entity another = new Entity();
 
         one.setId("1");
 

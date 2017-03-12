@@ -1,8 +1,16 @@
+import doubles.DosageInMemoryGateway;
+import doubles.DrugInMemoryGateway;
+import entities.Dosage;
+import entities.Dose;
 import entities.Drug;
 import org.junit.Before;
 import org.junit.Test;
+import usecases.DosageGateway;
+import usecases.DrugGateway;
+import usecases.GetPrescribedDrugsUseCase;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -11,12 +19,15 @@ import static org.junit.Assert.assertTrue;
 
 public class GetPrescribedDrugsUseCaseTest {
 
-    private Gateway gateway = new Gateway();
+    //todo: set up gateways through injection
+    private DrugGateway drugGateway = new DrugInMemoryGateway();
+    private DosageGateway dosageGateway = new DosageInMemoryGateway();
+
     private GetPrescribedDrugsUseCase useCase;
 
     @Before
     public void setUp() {
-        useCase = new GetPrescribedDrugsUseCase(gateway);
+        useCase = new usecases.GetPrescribedDrugsUseCase(drugGateway, dosageGateway);
     }
 
     @Test
@@ -28,7 +39,7 @@ public class GetPrescribedDrugsUseCaseTest {
     @Test
     public void givenOnePrescribedDrugReturnsOneDrug() {
         Drug drug = new Drug("Arsen Alb");
-        gateway.save(drug);
+        drugGateway.save(drug);
 
         List<Drug> drugs = useCase.getPrescribedDrugs();
 
@@ -41,7 +52,7 @@ public class GetPrescribedDrugsUseCaseTest {
         String[] names = {"Arsen Alb 1", "Arsen Alb 2", "Arsen Alb 3"};
 
         List<Drug> persisted = Stream.of(names)
-                .map(name -> gateway.save(new Drug(name)))
+                .map(name -> drugGateway.save(new Drug(name)))
                 .sorted(Comparator.comparing(Drug::getId))
                 .collect(Collectors.toList());
 
@@ -51,73 +62,29 @@ public class GetPrescribedDrugsUseCaseTest {
     }
 
     @Test
-    public void ImMemoryGatewayBehavesLikeDb_updateOfSavedEntityHasNoEffectOnDataInMemory() {
+    public void returnsDrugDosageByTreatmentId() {
         Drug drug = new Drug("Arsen Alb");
-        gateway.save(drug);
+        drugGateway.save(drug);
 
-        drug.setName("Arsen Alb +++");
-        Drug persisted = gateway.findAll().get(0);
+        Dose dose = new Dose();
+        dose.setQuantity(3);
+        dose.setForm("pill");
 
-        assertEquals("Arsen Alb", persisted.getName());
-    }
+        String treatmentId = "treatment1";
 
-    @Test
-    public void ImMemoryGatewayBehavesLikeDb_updateOfRetrievedEntityHasNoEffectOnDataInMemory() {
-        gateway.save(new Drug("Arsen Alb"));
+        Dosage dosage = new Dosage();
+        dosage.setDose(dose);
+        dosage.setDailyIntakeAmount(2);
+        dosage.setTreatmentId(treatmentId);
 
-        Drug persisted = gateway.findAll().get(0);
-        persisted.setName("Arsen Alb ---");
+        dosageGateway.save(dosage);
 
-        assertEquals("Arsen Alb", gateway.findAll().get(0).getName());
-    }
+        Dosage d = useCase.getDrugDosage(drug.getId(), treatmentId);
 
-}
+        assertEquals(dosage, d);
 
-class Gateway {
-
-    private Set<Drug> entities = new HashSet<>();
-
-    public Drug save(Drug drug) {
-        persist(drug);
-        return drug;
-    }
-
-    public List<Drug> findAll() {
-        return entities.stream()
-                .map(this::clone)
-                .sorted(Comparator.comparing(Drug::getId))
-                .collect(Collectors.toList());
-    }
-
-    private void persist(Drug drug) {
-        drug.setId(UUID.randomUUID().toString());
-        Drug clone = clone(drug);
-        entities.add(clone);
-    }
-
-    private Drug clone(Drug drug) {
-        try {
-            return (Drug) drug.clone();
-        }
-        catch (CloneNotSupportedException e) {
-            throw new UnCloneable();
-        }
-    }
-
-
-}
-
-class GetPrescribedDrugsUseCase {
-    private Gateway gateway;
-
-    public GetPrescribedDrugsUseCase(Gateway gateway) {
-        this.gateway = gateway;
-    }
-
-    public List<Drug> getPrescribedDrugs() {
-        return gateway.findAll();
+        assertEquals(3, d.getDose().getQuantity());
+        assertEquals("pill", d.getDose().getForm());
+        assertEquals(2, d.getDailyIntakeAmount());
     }
 }
-
-class UnCloneable extends RuntimeException {}
-
