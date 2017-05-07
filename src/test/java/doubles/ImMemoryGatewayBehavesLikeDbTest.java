@@ -21,7 +21,17 @@ public class ImMemoryGatewayBehavesLikeDbTest {
     }
 
     @Test
-    public void updateOfRetrievedEntityHasNoEffectOnDataInMemory() {
+    public void updateOfOneRetrievedEntityHasNoEffectOnDataInMemory() {
+        Drug origin = gateway.save(new Drug("Arsen Alb"));
+
+        Drug persisted = gateway.findById(origin.getId());
+        persisted.setName("Arsen Alb ---");
+
+        assertEquals("Arsen Alb", gateway.findById(origin.getId()).getName());
+    }
+
+    @Test
+    public void updateOfRetrievedEntitiesHasNoEffectOnDataInMemory() {
         gateway.save(new Drug("Arsen Alb"));
 
         Drug persisted = gateway.findAll().get(0);

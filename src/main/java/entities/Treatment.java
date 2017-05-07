@@ -13,16 +13,32 @@ public class Treatment extends Entity {
         this.drug = drug;
     }
 
+    public Drug getDrug() {
+        return drug;
+    }
+
     public void setDosage(Dosage dosage) {
         this.dosage = dosage;
+    }
+
+    public Dosage getDosage() {
+        return dosage;
     }
 
     public void setStartsOn(LocalDate startsOn) {
         this.startsOn = startsOn;
     }
 
+    public LocalDate getStartsOn() {
+        return startsOn;
+    }
+
     public void setPeriod(TreatmentPeriod period) {
         this.period = period;
+    }
+
+    public TreatmentPeriod getPeriod() {
+        return period;
     }
 
     public void setStopsOn(LocalDate stopsOn) {

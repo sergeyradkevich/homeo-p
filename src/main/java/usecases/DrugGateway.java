@@ -8,4 +8,6 @@ public interface DrugGateway {
     List<Drug> findAll();
 
     Drug save(Drug drug);
+
+    Drug findById(String drugId);
 }

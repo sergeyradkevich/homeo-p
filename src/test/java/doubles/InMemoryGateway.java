@@ -14,6 +14,15 @@ public class InMemoryGateway<T extends Entity> {
         return entity;
     }
 
+    public T findById(String id) {
+        Optional<T> result = entities.stream()
+                .filter(e -> e.getId().equals(id))
+                .findFirst()
+                .map(this::clone);
+
+        return result.isPresent()? result.get() : null;
+    }
+
     public List<T> findAll() {
         return entities.stream()
                 .map(this::clone)
