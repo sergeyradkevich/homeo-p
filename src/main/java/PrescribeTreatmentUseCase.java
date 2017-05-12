@@ -14,14 +14,12 @@ import java.util.*;
 import java.util.function.Consumer;
 
 class PrescribeTreatmentUseCase {
-    private TreatmentGateway treatmentGateway;
-    private DrugGateway drugGateway;
-    private DosageGateway dosageGateway;
+    private final TreatmentGateway treatmentGateway;
+    private final DrugGateway drugGateway;
+    private final DosageGateway dosageGateway;
+    private final UseCaseValidator validator;
 
     public Treatment prescribe(PrescribeTreatmentRequest request) {
-        // todo: inject validator
-        PrescribeTreatmentValidator validator = new PrescribeTreatmentValidator();
-
         validator.validate(request);
         if (!validator.isValid()) throw new PrescribeTreatmentException();
 
@@ -56,13 +54,15 @@ class PrescribeTreatmentUseCase {
 
         return treatment;
     }
-    
+
     public PrescribeTreatmentUseCase(TreatmentGateway treatmentGateway,
                                      DrugGateway drugGateway,
-                                     DosageGateway dosageGateway) {
+                                     DosageGateway dosageGateway,
+                                     UseCaseValidator validator) {
         this.treatmentGateway = treatmentGateway;
         this.drugGateway = drugGateway;
         this.dosageGateway = dosageGateway;
+        this.validator = validator;
     }
 }
 
@@ -87,7 +87,7 @@ abstract class BaseUseCaseValidator implements UseCaseValidator {
     public void validate(UseCaseRequest request) {
         this.request = request;
         errors.clear();
-        rules.forEach((attribute, validation) -> validation.accept(attribute));
+        rules.forEach((attribute, rule) -> rule.accept(attribute));
     }
 
     @Override
@@ -95,6 +95,7 @@ abstract class BaseUseCaseValidator implements UseCaseValidator {
         return errors.isEmpty();
     }
 
+    // todo: List of attribute + its errors
     @Override
     public List<String> errors() {
         return Collections.unmodifiableList(errors);
@@ -103,71 +104,90 @@ abstract class BaseUseCaseValidator implements UseCaseValidator {
     protected abstract void fillRequiredAttributes();
     protected abstract void initializeRules();
 
+    protected void addRule(String attribute, Consumer<String> rule) {
+        rules.put(attribute, rule);
+    }
+
     protected void requireNonEmpty(String attribute) {
         String attrValue = request.getParameter(attribute);
-        String attrName = attributes.get(attribute);
-
-        if (Objects.isNull(attrValue) || attrValue.isEmpty())
-            errors.add(String.format("'%s' must be present", attrName));
+        if (Objects.isNull(attrValue) || attrValue.isEmpty()) {
+            String attrName = attributes.get(attribute);
+            failCheck("'%s' must be present", attrName);
+        }
     }
 
     protected void checkDateFormat(String attribute) {
-        // todo: conditional chaining should resolve this
-        if (Objects.isNull(request.getParameter(attribute))) return;
+        if (request.isParameterMissing(attribute)) return;
 
         String attrValue = request.getParameter(attribute);
-        String attrName = attributes.get(attribute);
-
         try {
             LocalDate.parse(attrValue, DateTimeFormatter.ISO_LOCAL_DATE);
         } catch (DateTimeParseException e) {
-            errors.add(String.format("'%s' is malformed: '%s'. Accepted format is 'yyyy-MM-dd'", attrName, attrValue));
+            String attrName = attributes.get(attribute);
+            failCheck("'%s' is malformed: '%s'. Accepted format is 'yyyy-MM-dd'", attrName, attrValue);
         }
     }
 
     protected void checkIntegerFormat(String attribute) {
-        // todo: conditional chaining should resolve this
-        if (Objects.isNull(request.getParameter(attribute))) return;
+        if (request.isParameterMissing(attribute)) return;
 
         String attrValue = request.getParameter(attribute);
-        String attrName = attributes.get(attribute);
-
         try {
             Integer.parseInt(attrValue);
         } catch (NumberFormatException e) {
-            errors.add(String.format("'%s' is malformed: '%s'", attrName, attrValue));
+            String attrName = attributes.get(attribute);
+            failCheck("'%s' is malformed: '%s'", attrName, attrValue);
         }
     }
 
     protected void requirePositiveNumber(String attribute) {
-        // todo: conditional chaining should resolve this
-        if (Objects.isNull(request.getParameter(attribute))) return;
+        if (request.isParameterMissing(attribute)) return;
 
         String attrValue = request.getParameter(attribute);
-        String attrName = attributes.get(attribute);
-
-        // todo: conditional chaining should resolve this
-        if (!errors().isEmpty()) return;
-
-        long result = Long.parseLong(attrValue);
-        if (result < 0)
-            errors.add(String.format("'%s' must be a positive value", attrName));
+        try {
+            long result = Long.parseLong(attrValue);
+            if (result < 0) {
+                String attrName = attributes.get(attribute);
+                failCheck("'%s' must be a positive value", attrName);
+            }
+        } catch (NumberFormatException e) {
+            skipCheck();
+        }
     }
 
     protected void requireNonZero(String attribute) {
-        // todo: conditional chaining should resolve this
-        if (Objects.isNull(request.getParameter(attribute))) return;
+        if (request.isParameterMissing(attribute)) return;
 
         String attrValue = request.getParameter(attribute);
-        String attrName = attributes.get(attribute);
+        try {
+            long result = Long.parseLong(attrValue);
+            if (result == 0) {
+                String attrName = attributes.get(attribute);
+                failCheck("'%s' must be greater than zero", attrName);
+            }
+        } catch (NumberFormatException e) {
+            skipCheck();
+        }
+    }
 
-        // todo: conditional chaining should resolve this
-        if (!errors().isEmpty()) return;
+    private void failCheck(String message, Object... args) {
+        errors.add(String.format(message, args));
+    }
 
-        long result = Long.parseLong(attrValue);
+    private void skipCheck() {}
+}
 
-        if (result == 0)
-            errors.add(String.format("'%s' must be greater than zero", attrName));
+class Rule <T> implements Consumer<T> {
+    private Collection<Consumer<T>> checks = new ArrayList<>();
+
+    public Rule <T> add(Consumer<T> check) {
+        checks.add(check);
+        return this;
+    }
+
+    @Override
+    public void accept(T t) {
+        checks.forEach(check -> check.accept(t));
     }
 }
 
@@ -184,22 +204,21 @@ class PrescribeTreatmentValidator extends BaseUseCaseValidator {
 
     @Override
     protected void initializeRules() {
-        Consumer<String> starDateRule = d -> { requireNonEmpty(d); checkDateFormat(d); };
-        Consumer<String> periodAmountRule = a -> {
-            requireNonEmpty(a);
-            checkIntegerFormat(a);
-            requirePositiveNumber(a);
-            requireNonZero(a);
-        };
-        Consumer<String> periodUnitRule = this::requireNonEmpty;
-        Consumer<String> drugIdRule = this::requireNonEmpty;
-        Consumer<String> dosageIdRule = this::requireNonEmpty;
+        Consumer<String> starDateRule = new Rule<String>()
+                .add(this::requireNonEmpty)
+                .add(this::checkDateFormat);
 
-        rules.put("startDate", starDateRule);
-        rules.put("periodAmount", periodAmountRule);
-        rules.put("periodUnit", periodUnitRule);
-        rules.put("drugId", drugIdRule);
-        rules.put("dosageId", dosageIdRule);
+        Consumer<String> periodAmountRule = new Rule<String>()
+                .add(this::requireNonEmpty)
+                .add(this::checkIntegerFormat)
+                .add(this::requirePositiveNumber)
+                .add(this::requireNonZero);
+
+        addRule("startDate", starDateRule);
+        addRule("periodAmount", periodAmountRule);
+        addRule("periodUnit", this::requireNonEmpty);
+        addRule("drugId", this::requireNonEmpty);
+        addRule("dosageId", this::requireNonEmpty);
     }
 }
 
@@ -208,6 +227,10 @@ abstract class UseCaseRequest <T extends UseCaseRequest> {
 
     protected String getParameter(String attribute) {
         return parameters.get(attribute);
+    }
+
+    protected boolean isParameterMissing(String attribute) {
+        return Objects.isNull(getParameter(attribute));
     }
 
     protected T buildParameterAndReturnSelf(String parameter, String value) {

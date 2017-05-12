@@ -23,6 +23,7 @@ public class PrescribeTreatmentUseCaseTest {
     private TreatmentGateway treatmentGateway = new TreatmentInMemoryGateway();
     private DrugGateway drugGateway = new DrugInMemoryGateway();
     private DosageGateway dosageGateway = new DosageInMemoryGateway();
+    private UseCaseValidator validator = new PrescribeTreatmentValidator();
 
     private PrescribeTreatmentUseCase prescribeTreatmentUseCase;
 
@@ -33,7 +34,8 @@ public class PrescribeTreatmentUseCaseTest {
 
     @Before
     public void setUp() {
-        prescribeTreatmentUseCase = new PrescribeTreatmentUseCase(treatmentGateway, drugGateway, dosageGateway);
+        prescribeTreatmentUseCase = new PrescribeTreatmentUseCase(
+                treatmentGateway, drugGateway, dosageGateway, validator);
 
         if (Objects.isNull(drug)) {
             drug = new Drug("Arsen Alb");
@@ -54,27 +56,6 @@ public class PrescribeTreatmentUseCaseTest {
 
         assertNotNull(t.getId());
         assertNotEquals("", t.getId());
-    }
-
-    @Test public void buildingRequestSpike() {
-        PrescribeTreatmentRequest request = new PrescribeTreatmentRequest()
-                .addStartDate("2017-03-16")
-                .addPeriodAmount("1")
-                .addPeriodUnit("Months")
-                .addDrugId(drug.getId())
-                .addDosageId(dosage.getId());
-
-        request.startDate();
-        request.periodAmount();
-        request.periodUnit();
-        request.drugId();
-        request.dosageId();
-
-        PrescribeTreatmentValidator v = new PrescribeTreatmentValidator();
-        v.validate(request);
-
-        v.errors().forEach(System.out::println);
-        assertTrue(v.isValid());
     }
 
     @Test
@@ -226,6 +207,13 @@ public class PrescribeTreatmentUseCaseTest {
             .addDrugId(drug.getId())
             .addDosageId(dosage.getId());
     }
+
+    // todo: spaces for String parametes
+    // todo: PeriodUnit - valid units like Months, Days and so on
+
+    // todo: GetPrescribedDrugsUseCase migrate to treatment concept
+    
+    // todo: overlapping of the treatment of the same drug
 
     // todo: print date pattern in exception message when input date is malformed
 
