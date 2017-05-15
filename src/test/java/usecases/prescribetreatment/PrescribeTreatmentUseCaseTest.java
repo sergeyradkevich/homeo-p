@@ -1,3 +1,5 @@
+package usecases.prescribetreatment;
+
 import doubles.DosageInMemoryGateway;
 import doubles.DrugInMemoryGateway;
 import doubles.TreatmentInMemoryGateway;
@@ -10,6 +12,7 @@ import org.junit.Test;
 import usecases.DosageGateway;
 import usecases.DrugGateway;
 import usecases.TreatmentGateway;
+import usecases.UseCaseValidator;
 
 import java.time.LocalDate;
 import java.time.Month;
