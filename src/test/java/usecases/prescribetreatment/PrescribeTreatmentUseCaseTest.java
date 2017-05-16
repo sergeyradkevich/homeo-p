@@ -213,8 +213,6 @@ public class PrescribeTreatmentUseCaseTest {
 
     // todo: spaces for String parametes
     // todo: PeriodUnit - valid units like Months, Days and so on
-
-    // todo: GetPrescribedDrugsUseCase migrate to treatment concept
     
     // todo: overlapping of the treatment of the same drug
 
