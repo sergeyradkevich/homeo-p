@@ -9,13 +9,13 @@ public class GetPrescribedDrugsUseCase {
     private DrugGateway drugGateway;
     private DosageGateway dosageGateway;
 
-    public GetPrescribedDrugsUseCase(DrugGateway drugGateway, usecases.DosageGateway dosageGateway) {
+    public GetPrescribedDrugsUseCase(DrugGateway drugGateway, DosageGateway dosageGateway) {
         this.drugGateway = drugGateway;
         this.dosageGateway = dosageGateway;
     }
 
     public List<Drug> getPrescribedDrugs() {
-        return drugGateway.findAll();
+        return drugGateway.findPrescribedDrugs();
     }
 
     public Dosage getDrugDosage(String drugId, String treatmentId) {

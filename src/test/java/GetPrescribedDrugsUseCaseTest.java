@@ -1,14 +1,18 @@
+import doubles.AlwaysValidUseCaseValidatorStub;
 import doubles.DosageInMemoryGateway;
 import doubles.DrugInMemoryGateway;
+import doubles.TreatmentInMemoryGateway;
 import entities.Dosage;
 import entities.Dose;
 import entities.Drug;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
-import usecases.DosageGateway;
-import usecases.DrugGateway;
-import usecases.GetPrescribedDrugsUseCase;
+import usecases.*;
+import usecases.prescribetreatment.PrescribeTreatmentRequest;
+import usecases.prescribetreatment.PrescribeTreatmentUseCase;
 
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,15 +23,20 @@ import static org.junit.Assert.assertTrue;
 
 public class GetPrescribedDrugsUseCaseTest {
 
+    private TreatmentGateway treatmentGateway = new TreatmentInMemoryGateway();
     //todo: set up gateways through injection
-    private DrugGateway drugGateway = new DrugInMemoryGateway();
+    private DrugGateway drugGateway = new DrugInMemoryGateway((TreatmentInMemoryGateway) treatmentGateway);
     private DosageGateway dosageGateway = new DosageInMemoryGateway();
 
     private GetPrescribedDrugsUseCase useCase;
 
+    //todo: set up use case through injection/setting up a context
+    private PrescribeTreatmentUseCase prescribeTreatmentUseCase = new PrescribeTreatmentUseCase(
+            treatmentGateway, drugGateway, dosageGateway, new AlwaysValidUseCaseValidatorStub());
+
     @Before
     public void setUp() {
-        useCase = new usecases.GetPrescribedDrugsUseCase(drugGateway, dosageGateway);
+        useCase = new GetPrescribedDrugsUseCase(drugGateway, dosageGateway);
     }
 
     @Test
@@ -37,30 +46,27 @@ public class GetPrescribedDrugsUseCaseTest {
     }
 
     @Test
-    public void givenOnePrescribedDrugReturnsOneDrug() {
-        Drug drug = new Drug("Arsen Alb");
-        drugGateway.save(drug);
+    public void givenOnePrescribedForTreatmentDrugReturnsOneDrug() {
+        givenNonPrescribedDrug();
+        Drug prescribedDrug = givenPrescribedDrugs("Arsen Alb").get(0);
 
         List<Drug> drugs = useCase.getPrescribedDrugs();
 
-        assertEquals(drug, drugs.get(0));
+        assertEquals(prescribedDrug, drugs.get(0));
         assertEquals(1, drugs.size());
     }
 
     @Test
     public void givenManyPrescribedDrugsReturnsThem() {
-        String[] names = {"Arsen Alb 1", "Arsen Alb 2", "Arsen Alb 3"};
-
-        List<Drug> persisted = Stream.of(names)
-                .map(name -> drugGateway.save(new Drug(name)))
-                .sorted(Comparator.comparing(Drug::getId))
-                .collect(Collectors.toList());
+        givenNonPrescribedDrug();
+        List<Drug> prescribed = givenPrescribedDrugs("Arsen Alb 1", "Arsen Alb 2", "Arsen Alb 3");
 
         List<Drug> drugs = useCase.getPrescribedDrugs();
 
-        assertEquals(persisted, drugs);
+        assertEquals(prescribed, drugs);
     }
 
+    @Ignore
     @Test
     public void returnsDrugDosageByTreatmentId() {
         Drug drug = new Drug("Arsen Alb");
@@ -86,5 +92,40 @@ public class GetPrescribedDrugsUseCaseTest {
         assertEquals(3, d.getDose().getQuantity());
         assertEquals("pill", d.getDose().getForm());
         assertEquals(2, d.getDailyIntakeAmount());
+    }
+
+    private Drug givenNonPrescribedDrug() {
+        Drug nonPrescribed = new Drug("Vocara");
+        drugGateway.save(nonPrescribed);
+
+        return nonPrescribed;
+    }
+
+    private List<Drug> givenPrescribedDrugs(String... names) {
+        List<Drug> prescribed = Stream.of(names)
+                .map(name -> drugGateway.save(new Drug(name)))
+                .sorted(Comparator.comparing(Drug::getId))
+                .collect(Collectors.toList());
+
+        Dose dose = new Dose();
+        dose.setQuantity(3);
+        dose.setForm("pill");
+
+        Dosage dosage = new Dosage();
+        dosage.setDose(dose);
+        dosage.setDailyIntakeAmount(2);
+        dosageGateway.save(dosage);
+
+        prescribed.forEach(
+                drug -> prescribeTreatmentUseCase.prescribe(
+                        new PrescribeTreatmentRequest()
+                                .addDrugId(drug.getId())
+                                .addDosageId(dosage.getId())
+                                .addStartDate(LocalDate.now().toString())
+                                .addPeriodAmount("6")
+                                .addPeriodUnit("Months"))
+        );
+
+        return prescribed;
     }
 }
