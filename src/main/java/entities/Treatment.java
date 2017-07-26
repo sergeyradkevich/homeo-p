@@ -48,4 +48,10 @@ public class Treatment extends Entity {
     public LocalDate getStopsOn() {
         return stopsOn;
     }
+
+    public boolean doesOverlap(Treatment other) {
+        if (!getDrug().equals(other.getDrug())) return false;
+        if (getStartsOn().isAfter(other.getStopsOn()) || getStopsOn().isBefore(other.getStartsOn())) return false;
+        return true;
+    }
 }

@@ -32,7 +32,7 @@ public class PrescribeTreatmentUseCaseTest {
 
     private PrescribeTreatmentRequest request;
 
-    private Drug drug;
+    private Drug drug, anotherDrug;
     private Dosage dosage;
 
     @Before
@@ -43,6 +43,11 @@ public class PrescribeTreatmentUseCaseTest {
         if (Objects.isNull(drug)) {
             drug = new Drug("Arsen Alb");
             drugGateway.save(drug);
+        }
+
+        if (Objects.isNull(anotherDrug)) {
+            anotherDrug = new Drug("Vocara");
+            drugGateway.save(anotherDrug);
         }
 
         if (Objects.isNull(dosage)) {
@@ -202,7 +207,186 @@ public class PrescribeTreatmentUseCaseTest {
         prescribeTreatmentUseCase.prescribe(request);
     }
 
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_sameStartDateOfTreatmentPeriod() {
+        prescribeTreatmentUseCase.prescribe(request);
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_sameEndDateOfTreatmentPeriod() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-04-14");
+        request.addPeriodAmount("2");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+                 .(s)----------.(e)
+                    .(s)----------.(e)
+    */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewStartDateIsAfterExisting() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-17");
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+                 .(s)----------.(e)
+                    .(s)----.(e)
+    */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewStartDateIsAfterExistingStartAndEndDateIsBeforeExistingEnd() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-17");
+        request.addPeriodAmount("2");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+                 .(s)----------.(e)
+                    .(s)------------.(e)
+    */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewStartDateIsAfterExistingStartAndEndDateIsAfterExistingEnd() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-17");
+        request.addPeriodAmount("2");
+        request.addPeriodUnit("Months");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      when (s) after .(e)
+                 .(s)----------.(e)
+                                    .(s)----------.(e)
+    */
+    @Test
+    public void noOverlap_whenNewTreatmentStartsAfterEndOfExistingTreatment() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-04-17");
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      when (e) before .(s)
+                 .(s)----------.(e)
+      .(s)--.(e)
+    */
+    @Test
+    public void noOverlap_whenTreatmentEndsBeforeStartOfTreatment() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-14");
+        request.addPeriodAmount("1");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) before .(s) but (e) after .(s)
+                 .(s)----------.(e)
+        .(s)-------------.(e)
+    */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenTreatmentStartsBeforeStartButEndsAfterStart() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-14");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+             .(s)----------.(e)
+                           .(s)----.(e)
+    */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewStartsOnDateWhenExistingEnds() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-04-15");
+        request.addPeriodAmount("2");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+             .(s)----------.(e)
+      .(s)---.(e)
+   */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewEndsOnDateWhenExistingStarts() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-15");
+        request.addPeriodAmount("2");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+             .(s)----------.(e)
+      .(s)-----------------.(e)
+   */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewEndsOnDateWhenExistingEnds() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-15");
+        request.addPeriodAmount("32");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    /*
+      (s) after .(s) but before .(e)
+             .(s)----------.(e)
+      .(s)----------------------.(e)
+   */
+    @Test(expected = PrescribeTreatmentException.class)
+    public void overlapIsNotAllowed_whenNewStartsBeforeExistingStatAndEndsAfterExistingEnds() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addStartDate("2017-03-15");
+        request.addPeriodAmount("60");
+        request.addPeriodUnit("Days");
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test
+    public void noOverlap_whenPeriodIsSameButDrugsAreDifferent() {
+        prescribeTreatmentUseCase.prescribe(request);
+
+        request.addDrugId(anotherDrug.getId());
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
     private void setUpPrescribeTreatmentRequest() {
+        // it ends on 2017-04-15
         request = new PrescribeTreatmentRequest()
             .addStartDate("2017-03-16")
             .addPeriodAmount("1")
@@ -213,8 +397,6 @@ public class PrescribeTreatmentUseCaseTest {
 
     // todo: spaces for String parametes
     // todo: PeriodUnit - valid units like Months, Days and so on
-    
-    // todo: overlapping of the treatment of the same drug
 
     // todo: print date pattern in exception message when input date is malformed
 
