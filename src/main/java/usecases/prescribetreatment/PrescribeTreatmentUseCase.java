@@ -60,6 +60,11 @@ public class PrescribeTreatmentUseCase {
         treatment.setPeriod(period);
         treatment.setStopsOn(period.calcEnd(startsOn));
 
+        if (treatmentGateway.doesTreatmentExist(treatment))
+            throw new PrescribeTreatmentException(String.format(
+                    "The treatment that is being creating overlaps with the already prescribed drug: start date %s end date %s",
+                    treatment.getStartsOn(), treatment.getStopsOn()));
+
         treatmentGateway.save(treatment);
 
         return treatment;
