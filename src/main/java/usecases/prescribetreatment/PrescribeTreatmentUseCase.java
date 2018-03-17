@@ -3,7 +3,7 @@ package usecases.prescribetreatment;
 import entities.Dosage;
 import entities.Drug;
 import entities.Treatment;
-import entities.TreatmentPeriod;
+import values.TreatmentPeriod;
 import usecases.DosageGateway;
 import usecases.DrugGateway;
 import usecases.TreatmentGateway;

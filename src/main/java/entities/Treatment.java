@@ -1,5 +1,7 @@
 package entities;
 
+import values.TreatmentPeriod;
+
 import java.time.LocalDate;
 
 public class Treatment extends Entity {

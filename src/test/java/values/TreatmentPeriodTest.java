@@ -1,4 +1,4 @@
-package entities;
+package values;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -25,17 +25,6 @@ public class TreatmentPeriodTest {
     @Before
     public void setUp() throws Exception {
         fiveDays = new TreatmentPeriod(5, ChronoUnit.DAYS);
-    }
-
-    @Test
-    public void creation() {
-        TreatmentPeriod p = new TreatmentPeriod();
-
-        p.setUnit(DAYS);
-        p.setAmount(30);
-
-        assertEquals(DAYS, p.getUnit());
-        assertEquals(30, p.getAmount());
     }
 
     @Test

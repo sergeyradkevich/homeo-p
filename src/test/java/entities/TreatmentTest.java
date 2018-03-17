@@ -1,6 +1,7 @@
 package entities;
 
 import org.junit.Test;
+import values.TreatmentPeriod;
 
 import java.time.LocalDate;
 import java.time.Month;

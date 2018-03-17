@@ -6,7 +6,7 @@ import doubles.TreatmentInMemoryGateway;
 import entities.Dosage;
 import entities.Drug;
 import entities.Treatment;
-import entities.TreatmentPeriod;
+import values.TreatmentPeriod;
 import org.junit.Before;
 import org.junit.Test;
 import usecases.DosageGateway;
