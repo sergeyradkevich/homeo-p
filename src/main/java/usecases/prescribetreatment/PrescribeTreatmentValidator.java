@@ -5,7 +5,7 @@ import usecases.ValidationRule;
 
 import java.util.function.Consumer;
 
-class PrescribeTreatmentValidator extends BaseUseCaseValidator {
+public class PrescribeTreatmentValidator extends BaseUseCaseValidator {
 
     @Override
     protected void fillRequiredAttributes() {

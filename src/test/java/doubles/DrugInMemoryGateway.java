@@ -10,17 +10,17 @@ import java.util.stream.Collectors;
 
 public class DrugInMemoryGateway extends InMemoryGateway<Drug> implements DrugGateway {
 
-    private TreatmentInMemoryGateway treatmentGateway;
+    private TreatmentInMemoryGateway drugSourceThroughTreatment;
 
     public DrugInMemoryGateway() {}
 
     public DrugInMemoryGateway(TreatmentInMemoryGateway treatmentGateway) {
-        this.treatmentGateway = treatmentGateway;
+        this.drugSourceThroughTreatment = treatmentGateway;
     }
 
     @Override
     public List<Drug> findPrescribedDrugs() {
-        return treatmentGateway.findAll()
+        return drugSourceThroughTreatment.findAll()
                 .stream()
                 .map(Treatment::getDrug)
                 .sorted(Comparator.comparing(Drug::getId))

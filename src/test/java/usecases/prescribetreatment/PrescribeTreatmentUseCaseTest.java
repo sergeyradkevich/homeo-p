@@ -1,18 +1,20 @@
 package usecases.prescribetreatment;
 
-import doubles.DosageInMemoryGateway;
-import doubles.DrugInMemoryGateway;
-import doubles.TreatmentInMemoryGateway;
+import com.google.inject.Inject;
 import entities.Dosage;
 import entities.Drug;
 import entities.Treatment;
-import values.TreatmentPeriod;
+import net.lamberto.junit.GuiceJUnitRunner;
+import net.lamberto.junit.GuiceJUnitRunner.GuiceModules;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import testsetup.*;
 import usecases.DosageGateway;
 import usecases.DrugGateway;
 import usecases.TreatmentGateway;
 import usecases.UseCaseValidator;
+import values.TreatmentPeriod;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -21,11 +23,16 @@ import java.util.Objects;
 
 import static org.junit.Assert.*;
 
+@RunWith(GuiceJUnitRunner.class)
+@GuiceModules(CommonTestModule.class)
 public class PrescribeTreatmentUseCaseTest {
 
-    private TreatmentGateway treatmentGateway = new TreatmentInMemoryGateway();
-    private DrugGateway drugGateway = new DrugInMemoryGateway();
-    private DosageGateway dosageGateway = new DosageInMemoryGateway();
+    @Inject
+    private TreatmentGateway treatmentGateway;
+    @Inject
+    private DrugGateway drugGateway;
+    @Inject
+    private DosageGateway dosageGateway;
     private UseCaseValidator validator = new PrescribeTreatmentValidator();
 
     private PrescribeTreatmentUseCase prescribeTreatmentUseCase;

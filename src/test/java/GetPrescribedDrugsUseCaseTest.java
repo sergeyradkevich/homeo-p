@@ -1,13 +1,16 @@
+import com.google.inject.AbstractModule;
+import com.google.inject.Inject;
+import com.google.inject.Provides;
 import doubles.AlwaysValidUseCaseValidatorStub;
-import doubles.DosageInMemoryGateway;
-import doubles.DrugInMemoryGateway;
-import doubles.TreatmentInMemoryGateway;
 import entities.Dosage;
 import entities.Dose;
 import entities.Drug;
-import org.junit.Before;
+import net.lamberto.junit.GuiceJUnitRunner;
+import net.lamberto.junit.GuiceJUnitRunner.GuiceModules;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import testsetup.CommonTestModule;
 import usecases.*;
 import usecases.prescribetreatment.PrescribeTreatmentRequest;
 import usecases.prescribetreatment.PrescribeTreatmentUseCase;
@@ -21,23 +24,40 @@ import java.util.stream.Stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(GuiceJUnitRunner.class)
+@GuiceModules({ CommonTestModule.class, GetPrescribedDrugsUseCaseTest.TestModule.class })
 public class GetPrescribedDrugsUseCaseTest {
 
-    private TreatmentGateway treatmentGateway = new TreatmentInMemoryGateway();
-    //todo: set up gateways through injection
-    private DrugGateway drugGateway = new DrugInMemoryGateway((TreatmentInMemoryGateway) treatmentGateway);
-    private DosageGateway dosageGateway = new DosageInMemoryGateway();
+    public static class TestModule extends AbstractModule {
+        @Override
+        protected void configure() {
+            bind(UseCaseValidator.class).to(AlwaysValidUseCaseValidatorStub.class);
+        }
 
-    private GetPrescribedDrugsUseCase useCase;
+        @Provides
+        GetPrescribedDrugsUseCase getPrescribedDrugsUseCase(DrugGateway drugGateway, DosageGateway dosageGateway) {
+            return new GetPrescribedDrugsUseCase(drugGateway, dosageGateway);
+        }
 
-    //todo: set up use case through injection/setting up a context
-    private PrescribeTreatmentUseCase prescribeTreatmentUseCase = new PrescribeTreatmentUseCase(
-            treatmentGateway, drugGateway, dosageGateway, new AlwaysValidUseCaseValidatorStub());
-
-    @Before
-    public void setUp() {
-        useCase = new GetPrescribedDrugsUseCase(drugGateway, dosageGateway);
+        @Provides
+        PrescribeTreatmentUseCase prescribeTreatmentUseCase(TreatmentGateway treatmentGateway,
+                                                            DrugGateway drugGateway,
+                                                            DosageGateway dosageGateway,
+                                                            UseCaseValidator validator) {
+            return new PrescribeTreatmentUseCase(
+                    treatmentGateway, drugGateway, dosageGateway, validator);
+        }
     }
+
+    @Inject
+    private DosageGateway dosageGateway;
+    @Inject
+    private DrugGateway drugGateway;
+
+    @Inject
+    private GetPrescribedDrugsUseCase useCase;
+    @Inject
+    private PrescribeTreatmentUseCase prescribeTreatmentUseCase;
 
     @Test
     public void givenNoDrugsReturnsNoneDrugs() {
