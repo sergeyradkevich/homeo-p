@@ -56,4 +56,8 @@ public class Treatment extends Entity {
         if (getStartsOn().isAfter(other.getStopsOn()) || getStopsOn().isBefore(other.getStartsOn())) return false;
         return true;
     }
+
+    public boolean isUsedOn(LocalDate date) {
+        return !(date.isBefore(getStartsOn()) || date.isAfter(getStopsOn()));
+    }
 }
