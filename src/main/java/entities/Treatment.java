@@ -10,6 +10,7 @@ public class Treatment extends Entity {
     private LocalDate startsOn;
     private TreatmentPeriod period;
     private LocalDate stopsOn;
+    private DirectionMode directionMode;
 
     public void setDrug(Drug drug) {
         this.drug = drug;
@@ -51,13 +52,21 @@ public class Treatment extends Entity {
         return stopsOn;
     }
 
+    public DirectionMode getDirectionMode() {
+        return directionMode;
+    }
+
+    public void setDirectionMode(DirectionMode directionMode) {
+        this.directionMode = directionMode;
+    }
+
     public boolean doesOverlap(Treatment other) {
         if (!getDrug().equals(other.getDrug())) return false;
         if (getStartsOn().isAfter(other.getStopsOn()) || getStopsOn().isBefore(other.getStartsOn())) return false;
         return true;
     }
 
-    public boolean isUsedOn(LocalDate date) {
+    public boolean isWithinTreatmentPeriod(LocalDate date) {
         return !(date.isBefore(getStartsOn()) || date.isAfter(getStopsOn()));
     }
 }

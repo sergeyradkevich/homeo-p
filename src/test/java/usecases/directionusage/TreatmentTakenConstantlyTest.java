@@ -1,6 +1,13 @@
-package entities;
+package usecases.directionusage;
 
+import com.google.inject.Inject;
+import entities.DirectionMode;
+import entities.Treatment;
+import net.lamberto.junit.GuiceJUnitRunner;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import testsetup.TreatmentDirectionalModeModule;
 import values.TreatmentPeriod;
 
 import java.time.LocalDate;
@@ -11,10 +18,22 @@ import static java.time.temporal.ChronoUnit.MONTHS;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+@RunWith(GuiceJUnitRunner.class)
+@GuiceJUnitRunner.GuiceModules(TreatmentDirectionalModeModule.class)
 public class TreatmentTakenConstantlyTest {
+
+    @Inject
+    private GetDirectionalMode modeFactory;
+
+    private GetTreatmentUsageUseCase usageUseCase;
 
     private static final LocalDate CURRENT_DATE_APR_05 = LocalDate.parse("2018-04-05");
     private static final String MAY_16 = "2018-03-16";
+
+    @Before
+    public void setUp() {
+        usageUseCase = new GetTreatmentUsageUseCase(modeFactory);
+    }
 
     @Test
     public void isUsedDaily_WhenUsedOnDateBetweenStartAndEndOfTreatment() throws CloneNotSupportedException {
@@ -26,16 +45,16 @@ public class TreatmentTakenConstantlyTest {
         Treatment t3 = (Treatment) t.clone();
         t3.setStartsOn(CURRENT_DATE_APR_05);
 
-        assertTrue(t.isUsedOn(CURRENT_DATE_APR_05));
-        assertTrue(t2.isUsedOn(CURRENT_DATE_APR_05));
-        assertTrue(t3.isUsedOn(CURRENT_DATE_APR_05));
+        assertTrue(usageUseCase.isUsedOn(t, CURRENT_DATE_APR_05));
+        assertTrue(usageUseCase.isUsedOn(t2, CURRENT_DATE_APR_05));
+        assertTrue(usageUseCase.isUsedOn(t3, CURRENT_DATE_APR_05));
     }
 
     @Test
     public void isNotUsedDaily_WhenUsedOnDateIsAfterEndOfTreatment() {
         Treatment t = givenTreatment(MAY_16, 2, DAYS);
 
-        assertFalse(t.isUsedOn(CURRENT_DATE_APR_05));
+        assertFalse(usageUseCase.isUsedOn(t, CURRENT_DATE_APR_05));
     }
 
     @Test
@@ -43,7 +62,7 @@ public class TreatmentTakenConstantlyTest {
         Treatment t = givenTreatment(MAY_16, 2, DAYS);
         LocalDate date = LocalDate.parse(MAY_16).minusDays(1);
 
-        assertFalse(t.isUsedOn(date));
+        assertFalse(usageUseCase.isUsedOn(t, date));
     }
 
     private Treatment givenTreatment(String startDate, Integer periodAmount, ChronoUnit duration) {
@@ -58,6 +77,8 @@ public class TreatmentTakenConstantlyTest {
 
         result.setPeriod(period);
         result.setStopsOn(period.calcEnd(startsOn));
+
+        result.setDirectionMode(new DirectionMode());
 
         return result;
     }
