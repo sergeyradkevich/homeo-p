@@ -2,6 +2,8 @@ package usecases.prescribetreatment;
 
 import usecases.UseCaseRequest;
 
+import java.util.Map;
+
 public class PrescribeTreatmentRequest extends UseCaseRequest<PrescribeTreatmentRequest> {
 
     public PrescribeTreatmentRequest addStartDate(String value) {
@@ -20,6 +22,11 @@ public class PrescribeTreatmentRequest extends UseCaseRequest<PrescribeTreatment
         return buildParameterAndReturnSelf("dosageId", value);
     }
 
+    public PrescribeTreatmentRequest addDirectionMode(Map<String, String> options) {
+        options.entrySet().forEach(each -> setParameter(each.getKey(), each.getValue()));
+        return self();
+    }
+
     String startDate() {
         return getParameter("startDate");
     }
@@ -34,6 +41,18 @@ public class PrescribeTreatmentRequest extends UseCaseRequest<PrescribeTreatment
     }
     String dosageId() {
         return getParameter("dosageId");
+    }
+
+    String directionModeType() {
+        return getParameter("directionModeType");
+    }
+
+    String directionModeTaken() {
+        return getParameter("directionModeTaken");
+    }
+
+    String directionModeInterval() {
+        return getParameter("directionModeInterval");
     }
 
     @Override

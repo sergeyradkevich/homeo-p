@@ -22,7 +22,7 @@ public class TreatmentTakenDecreasingTest {
     delta
     limit
 
-    The source amount for delta is Dosage.dailyIntakeAmount (int)
+    The source amount for subtraction a delta is Dosage.dailyIntakeAmount (int)
     Criteria for delta:
     - 1 by default
     - cannot be greater than input dailyIntakeAmount

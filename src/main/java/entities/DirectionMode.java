@@ -2,11 +2,12 @@ package entities;
 
 public class DirectionMode {
 
-    private DirectionModeType type = DirectionModeType.CONSTANTLY;
+    private DirectionModeType type;
     private int taken;
     private int interval;
 
     public DirectionMode() {
+        type = DirectionModeType.byDefault();
     }
 
     public DirectionMode(DirectionModeType type) {

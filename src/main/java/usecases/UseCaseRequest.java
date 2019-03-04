@@ -7,11 +7,11 @@ import java.util.Objects;
 public abstract class UseCaseRequest <T extends UseCaseRequest> {
     private Map<String, String> parameters = new HashMap<>();
 
-    protected String getParameter(String attribute) {
+    public String getParameter(String attribute) {
         return parameters.get(attribute);
     }
 
-    protected boolean isParameterMissing(String attribute) {
+    public boolean isParameterMissing(String attribute) {
         return Objects.isNull(getParameter(attribute));
     }
 
@@ -22,7 +22,7 @@ public abstract class UseCaseRequest <T extends UseCaseRequest> {
 
     abstract protected T self();
 
-    private void setParameter(String parameter, String value) {
+    protected void setParameter(String parameter, String value) {
         parameters.put(parameter, value);
     }
 }

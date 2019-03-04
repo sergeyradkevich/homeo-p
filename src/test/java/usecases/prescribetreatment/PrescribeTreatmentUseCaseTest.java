@@ -1,9 +1,7 @@
 package usecases.prescribetreatment;
 
 import com.google.inject.Inject;
-import entities.Dosage;
-import entities.Drug;
-import entities.Treatment;
+import entities.*;
 import net.lamberto.junit.GuiceJUnitRunner;
 import net.lamberto.junit.GuiceJUnitRunner.GuiceModules;
 import org.junit.Before;
@@ -19,6 +17,8 @@ import values.TreatmentPeriod;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.junit.Assert.*;
@@ -190,6 +190,90 @@ public class PrescribeTreatmentUseCaseTest {
         prescribeTreatmentUseCase.prescribe(request);
     }
 
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_directionModeTypeShouldBePresent() {
+        request.addDirectionMode(givenEmptyPeriodicalParameters());
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_directionModeTypeShouldBeWithinValidValues() {
+        request.addDirectionMode(givenNonexistentDirectionType());
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_takenAmountShouldBePresentForPeriodicalModeType() {
+        Map<String, String> parameters = givenPeriodicalModeWithoutTakenAndIntervalParams();
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_takenAmountOfPeriodicalModeShouldBeNumeric() {
+        Map<String, String> parameters = givenPeriodicalParameters();
+        parameters.put("directionModeTaken", "tree");
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_takenAmountOfPeriodicalModeShouldBePositiveNumber() {
+        Map<String, String> parameters = givenPeriodicalParameters();
+        parameters.put("directionModeTaken", "-3");
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_takenAmountOfPeriodicalModeShouldBeNonZero() {
+        Map<String, String> parameters = givenPeriodicalParameters();
+        parameters.put("directionModeTaken", "0");
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_intervalAmountShouldBePresentForPeriodicalModeType() {
+        Map<String, String> parameters = givenPeriodicalModeWithoutIntervalParam();
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_intervalAmountOfPeriodicalModeShouldBeNumeric() {
+        Map<String, String> parameters = givenPeriodicalParameters();
+        parameters.put("directionModeInterval", "two");
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_intervalAmountOfPeriodicalModeShouldBePositiveNumber() {
+        Map<String, String> parameters = givenPeriodicalParameters();
+        parameters.put("directionModeInterval", "-2");
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void inputs_intervalAmountOfPeriodicalModeShouldBeNonZero() {
+        Map<String, String> parameters = givenPeriodicalParameters();
+        parameters.put("directionModeInterval", "0");
+        request.addDirectionMode(parameters);
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
     @Test
     public void treatmentCanStartInTheFuture() {
         LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -199,7 +283,8 @@ public class PrescribeTreatmentUseCaseTest {
                 .addPeriodAmount("2")
                 .addPeriodUnit("Days")
                 .addDrugId(drug.getId())
-                .addDosageId(dosage.getId());
+                .addDosageId(dosage.getId())
+                .addDirectionMode(givenDailyModeParameters());
 
         Treatment t = prescribeTreatmentUseCase.prescribe(request);
 
@@ -392,6 +477,34 @@ public class PrescribeTreatmentUseCaseTest {
         prescribeTreatmentUseCase.prescribe(request);
     }
 
+
+    @Test
+    public void treatmentDirectionModeIsDailyByDefault() {
+        Treatment t = prescribeTreatmentUseCase.prescribe(request);
+
+        assertTrue(t.getDirectionMode().isDaily());
+    }
+
+    @Test
+    public void treatmentDirectionModeIsPeriodical() {
+        request.addDirectionMode(givenPeriodicalParameters());
+
+        Treatment t = prescribeTreatmentUseCase.prescribe(request);
+
+        assertTrue(t.getDirectionMode().isPeriodically());
+    }
+
+    @Test
+    public void periodicalModeSetCorrectly() {
+        request.addDirectionMode(givenPeriodicalParameters());
+
+        Treatment t = prescribeTreatmentUseCase.prescribe(request);
+        DirectionMode m = t.getDirectionMode();
+
+        assertEquals(3, m.getTaken());
+        assertEquals(2, m.getInterval());
+    }
+
     private void setUpPrescribeTreatmentRequest() {
         // it ends on 2017-04-15
         request = new PrescribeTreatmentRequest()
@@ -399,7 +512,53 @@ public class PrescribeTreatmentUseCaseTest {
             .addPeriodAmount("1")
             .addPeriodUnit("Months")
             .addDrugId(drug.getId())
-            .addDosageId(dosage.getId());
+            .addDosageId(dosage.getId())
+            .addDirectionMode(givenDailyModeParameters());
+    }
+
+    private Map<String, String> givenDailyModeParameters() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.CONSTANTLY.name());
+
+        return modeOptions;
+    }
+
+    private Map<String, String> givenPeriodicalParameters() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.PERIODICALLY.name());
+        modeOptions.put("directionModeTaken", "3");
+        modeOptions.put("directionModeInterval", "2");
+
+        return modeOptions;
+    }
+
+    private Map<String, String> givenEmptyPeriodicalParameters() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", "");
+
+        return modeOptions;
+    }
+
+    private Map<String, String> givenNonexistentDirectionType() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", "Nonexistent Direction Type");
+
+        return modeOptions;
+    }
+
+    private Map<String, String> givenPeriodicalModeWithoutTakenAndIntervalParams() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.PERIODICALLY.name());
+
+        return modeOptions;
+    }
+
+    private Map<String, String> givenPeriodicalModeWithoutIntervalParam() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.PERIODICALLY.name());
+        modeOptions.put("directionModeTaken", "3");
+
+        return modeOptions;
     }
 
     // todo: spaces for String parametes

@@ -1,8 +1,6 @@
 package usecases.prescribetreatment;
 
-import entities.Dosage;
-import entities.Drug;
-import entities.Treatment;
+import entities.*;
 import values.TreatmentPeriod;
 import usecases.DosageGateway;
 import usecases.DrugGateway;
@@ -31,7 +29,7 @@ public class PrescribeTreatmentUseCase {
 
     public Treatment prescribe(PrescribeTreatmentRequest request) {
         validator.validate(request);
-        if (!validator.isValid()) throw new PrescribeTreatmentException();
+        if (!validator.isValid()) throw new PrescribeTreatmentException(validator.errors().toString());
 
         Drug drug = drugGateway.findById(request.drugId());
 
@@ -65,9 +63,28 @@ public class PrescribeTreatmentUseCase {
                     "The treatment that is being creating overlaps with the already prescribed drug: start date %s end date %s",
                     treatment.getStartsOn(), treatment.getStopsOn()));
 
+
+        DirectionModeType type = defineDirectionModeType(request.directionModeType());
+        DirectionMode directionMode = new DirectionMode(type);
+
+        if (!directionMode.isDaily()) {
+            directionMode.setTaken(Integer.parseInt(request.directionModeTaken()));
+            directionMode.setInterval(Integer.parseInt(request.directionModeInterval()));
+        }
+
+        treatment.setDirectionMode(directionMode);
+
         treatmentGateway.save(treatment);
 
         return treatment;
     }
+
+    private DirectionModeType defineDirectionModeType(String type) {
+        if (Objects.isNull(type))
+            return DirectionModeType.byDefault();
+
+        return DirectionModeType.valueOf(type);
+    }
+
 }
 
