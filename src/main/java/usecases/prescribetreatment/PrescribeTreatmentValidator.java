@@ -18,6 +18,9 @@ public class PrescribeTreatmentValidator extends BaseUseCaseValidator {
         addAttribute("dosageId", "Dosage Id");
         addAttribute("directionModeType", "Direction Mode Type");
         addAttribute("directionModeTaken", "Amount of Taken for the Periodical Direction");
+        // todo Check why there is no Interval?
+        addAttribute("directionModeDelta", "Amount of Delta for the Decreasing Direction");
+        addAttribute("directionModeLimit", "Amount of Limit for the Decreasing Direction");
     }
 
     @Override
@@ -38,17 +41,24 @@ public class PrescribeTreatmentValidator extends BaseUseCaseValidator {
                 .check(this::requireNonEmpty)
                 .check(directionModeTypeWithinValidRange)
                 .subrule(ValidationRule.of("directionModeTaken")
-                            .precondition(this::isPeriodicalDirectionMode)
+                            .precondition((__) -> this.getDirectionMode().isPeriodically())
                             .check(this::requireNonEmpty)
                             .check(this::checkIntegerFormat)
                             .check(this::requirePositiveNumber)
                             .check(this::requireNonZero))
                 .subrule(ValidationRule.of("directionModeInterval")
-                            .precondition(this::isPeriodicalDirectionMode)
+                            .precondition((__) -> this.getDirectionMode().isPeriodically())
                             .check(this::requireNonEmpty)
                             .check(this::checkIntegerFormat)
                             .check(this::requirePositiveNumber)
-                            .check(this::requireNonZero));
+                            .check(this::requireNonZero))
+                .subrule(ValidationRule.of("directionModeDelta")
+                            .precondition((__) -> this.getDirectionMode().isDecreasing())
+                            .check(this::checkIntegerFormat))
+                .subrule(ValidationRule.of("directionModeLimit")
+                        .precondition((__) -> this.getDirectionMode().isDecreasing())
+                        .check(this::checkIntegerFormat));
+
 
         addRule(starDateRule);
         addRule(periodAmountRule);
@@ -58,15 +68,11 @@ public class PrescribeTreatmentValidator extends BaseUseCaseValidator {
         addRule(directionModeTypeRule);
     }
 
-    private boolean isPeriodicalDirectionMode(Object __) {
+    private DirectionMode getDirectionMode() {
         String attrValue = request.getParameter("directionModeType");
 
         DirectionModeType type  = DirectionModeType.valueOf(attrValue);
-        DirectionMode mode = new DirectionMode(type);
-
-        if (mode.isDaily()) return false;
-
-        return mode.isPeriodically();
+        return new DirectionMode(type);
     }
 
 }

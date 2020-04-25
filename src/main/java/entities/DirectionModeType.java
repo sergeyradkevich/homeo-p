@@ -1,5 +1,7 @@
 package entities;
 
+import java.util.Objects;
+
 public enum DirectionModeType {
     CONSTANTLY,
     PERIODICALLY,
@@ -17,5 +19,12 @@ public enum DirectionModeType {
         catch (IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public static DirectionModeType of(String type) {
+        if (Objects.isNull(type))
+            return byDefault();
+
+        return valueOf(type);
     }
 }

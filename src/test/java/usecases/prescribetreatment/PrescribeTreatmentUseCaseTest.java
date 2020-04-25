@@ -505,6 +505,51 @@ public class PrescribeTreatmentUseCaseTest {
         assertEquals(2, m.getInterval());
     }
 
+    @Test(expected = PrescribeTreatmentException.class)
+    public void decreaseModeDeltaShouldBeNumerical() {
+        request.addDirectionMode(givenDecreaseModeWithInvalidDelta());
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    @Test(expected = PrescribeTreatmentException.class)
+    public void decreaseModeLimitShouldBeNumerical() {
+        request.addDirectionMode(givenDecreaseModeWithInvalidLimit());
+
+        prescribeTreatmentUseCase.prescribe(request);
+    }
+
+    // ToDo Tests on decrease mode delta & limit validations
+    // see TreatmentTakenDecreasingTes
+
+    @Test
+    public void decreaseModeSetCorrectly() {
+        request.addDirectionMode(givenDecreaseModeParameters1IntakeUntil2Times());
+
+        Treatment t = prescribeTreatmentUseCase.prescribe(request);
+        DirectionMode m = t.getDirectionMode();
+
+        assertEquals(1, m.getDelta());
+        assertEquals(2, m.getLimit());
+    }
+
+    /*
+        End date of a treatment should not be before the date
+        when the limit of daily intake amount is came,
+        thus the duration of treatment should be prolonged
+        so that it is equal or longer than "the date of the limit".
+    */
+    @Test
+    public void shouldProlongTreatmentDuration_OfDecreasingDirectionMode_IfLimitComes_AfterTheSpecifiedDuration() {
+        PrescribeTreatmentRequest r = givenDecreasingDirectionModeRequest();
+
+        Treatment t = prescribeTreatmentUseCase.prescribe(r);
+
+        assertEquals("Should not be equal to original/passed period, but to the prolonged one",
+                LocalDate.of(2018, Month.MARCH, 13), t.getStopsOn());
+        assertEquals(new TreatmentPeriod(6, ChronoUnit.DAYS), t.getPeriod());
+    }
+
     private void setUpPrescribeTreatmentRequest() {
         // it ends on 2017-04-15
         request = new PrescribeTreatmentRequest()
@@ -559,6 +604,60 @@ public class PrescribeTreatmentUseCaseTest {
         modeOptions.put("directionModeTaken", "3");
 
         return modeOptions;
+    }
+
+
+    private Map<String,String> givenDecreaseModeParameters1IntakeUntil2Times() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.DECREASINGLY.name());
+        modeOptions.put("directionModeDelta", "1");
+        modeOptions.put("directionModeLimit", "2");
+
+        return modeOptions;
+    }
+
+    private Map<String,String> givenDecreaseModeWithInvalidDelta() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.DECREASINGLY.name());
+        modeOptions.put("directionModeDelta", "one");
+        modeOptions.put("directionModeLimit", "2");
+
+        return modeOptions;
+    }
+
+    private Map<String,String> givenDecreaseModeWithInvalidLimit() {
+        Map<String, String> modeOptions = new HashMap<>();
+        modeOptions.put("directionModeType", DirectionModeType.DECREASINGLY.name());
+        modeOptions.put("directionModeDelta", "1");
+        modeOptions.put("directionModeLimit", "two");
+
+        return modeOptions;
+    }
+
+    /*
+        9 drops, 7 times a day, decreasing 1 intake daily until 2 times
+     */
+    private PrescribeTreatmentRequest givenDecreasingDirectionModeRequest() {
+        Drug vocara = new Drug("Vocara");
+        drugGateway.save(vocara);
+
+        Dose dose = new Dose();
+        dose.setQuantity(9);
+        dose.setForm("Drops");
+
+        Dosage d = new Dosage();
+        d.setDailyIntakeAmount(7);
+        d.setDose(dose);
+
+        dosageGateway.save(d);
+
+        return new PrescribeTreatmentRequest()
+                    .addStartDate("2018-03-08")
+                    .addPeriodAmount("3")
+                    .addPeriodUnit("Days")
+                    .addDrugId(vocara.getId())
+                    .addDosageId(d.getId())
+                    .addDirectionMode(givenDecreaseModeParameters1IntakeUntil2Times());
     }
 
     // todo: spaces for String parametes

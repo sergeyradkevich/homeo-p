@@ -55,35 +55,38 @@ public class PrescribeTreatmentUseCase {
                 ChronoUnit.valueOf(request.periodUnit().toUpperCase())
         );
 
+        DirectionModeType type = DirectionModeType.of(request.directionModeType());
+        DirectionMode directionMode = new DirectionMode(type);
+
+        if (directionMode.isPeriodically()) {
+            directionMode.setTaken(Integer.parseInt(request.directionModeTaken()));
+            directionMode.setInterval(Integer.parseInt(request.directionModeInterval()));
+        }
+
+        if (directionMode.isDecreasing()) {
+            directionMode.setDelta(Integer.parseInt(request.directionModeDelta()));
+            directionMode.setLimit(Integer.parseInt(request.directionModeLimit()));
+
+            int duration = directionMode.calcDecreasingDaysAmountUntilLimitInclusive(dosage.getDailyIntakeAmount());
+            TreatmentPeriod prolonged =  new TreatmentPeriod(duration, ChronoUnit.DAYS);
+            if (prolonged.isLonger(period)) {
+                period = prolonged;
+            }
+        }
+
         treatment.setPeriod(period);
         treatment.setStopsOn(period.calcEnd(startsOn));
+
+        treatment.setDirectionMode(directionMode);
 
         if (treatmentGateway.doesTreatmentExist(treatment))
             throw new PrescribeTreatmentException(String.format(
                     "The treatment that is being creating overlaps with the already prescribed drug: start date %s end date %s",
                     treatment.getStartsOn(), treatment.getStopsOn()));
 
-
-        DirectionModeType type = defineDirectionModeType(request.directionModeType());
-        DirectionMode directionMode = new DirectionMode(type);
-
-        if (!directionMode.isDaily()) {
-            directionMode.setTaken(Integer.parseInt(request.directionModeTaken()));
-            directionMode.setInterval(Integer.parseInt(request.directionModeInterval()));
-        }
-
-        treatment.setDirectionMode(directionMode);
-
         treatmentGateway.save(treatment);
 
         return treatment;
-    }
-
-    private DirectionModeType defineDirectionModeType(String type) {
-        if (Objects.isNull(type))
-            return DirectionModeType.byDefault();
-
-        return DirectionModeType.valueOf(type);
     }
 
 }

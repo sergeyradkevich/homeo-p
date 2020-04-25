@@ -55,6 +55,14 @@ public class PrescribeTreatmentRequest extends UseCaseRequest<PrescribeTreatment
         return getParameter("directionModeInterval");
     }
 
+    String directionModeDelta() {
+        return getParameter("directionModeDelta");
+    }
+
+    String directionModeLimit() {
+        return getParameter("directionModeLimit");
+    }
+
     @Override
     protected PrescribeTreatmentRequest self() {
         return this;

@@ -7,9 +7,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.temporal.ChronoUnit;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-import static java.time.temporal.ChronoUnit.MONTHS;
-import static java.time.temporal.ChronoUnit.YEARS;
+import static java.time.temporal.ChronoUnit.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -62,6 +60,28 @@ public class TreatmentPeriodTest {
     @Test
     public void neverEqualsToEmptyPeriod() {
         assertFalse(fiveDays.equals(null));
+    }
+
+    @Test
+    public void equalPeriodIsNotLonger() {
+        assertFalse(fiveDays.isLonger(new TreatmentPeriod(5, DAYS)));
+    }
+
+    @Test
+    public void periodWithGreaterDurationIsLonger() {
+        TreatmentPeriod sixDays = new TreatmentPeriod(6, DAYS);
+        assertTrue(sixDays.isLonger(fiveDays));
+
+
+        TreatmentPeriod oneMonth = new TreatmentPeriod(1, MONTHS);
+        assertTrue(oneMonth.isLonger(fiveDays));
+
+        TreatmentPeriod threeYears = new TreatmentPeriod(3, YEARS);
+        assertTrue(threeYears.isLonger(fiveDays));
+
+
+        TreatmentPeriod forever = new TreatmentPeriod(1, FOREVER);
+        assertFalse(threeYears.isLonger(forever));
     }
 
 }

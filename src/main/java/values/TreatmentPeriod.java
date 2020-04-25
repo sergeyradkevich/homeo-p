@@ -17,6 +17,10 @@ public class TreatmentPeriod {
         return startsOn.plus(amount, unit).minusDays(1);
     }
 
+    public boolean isLonger(TreatmentPeriod otherUnit) {
+        return this.calDurationInDays() > otherUnit.calDurationInDays();
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (Objects.isNull(obj)) return false;
@@ -29,5 +33,9 @@ public class TreatmentPeriod {
     @Override
     public String toString() {
         return String.format("{amount='%d', unit='%s'}", amount, unit.name());
+    }
+
+    private long calDurationInDays() {
+        return unit.getDuration().toDays() * amount;
     }
 }
