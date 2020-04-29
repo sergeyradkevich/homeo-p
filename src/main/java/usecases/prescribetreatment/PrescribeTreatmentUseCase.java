@@ -42,6 +42,19 @@ public class PrescribeTreatmentUseCase {
             throw new PrescribeTreatmentException(
                     String.format("No dosage found with '%s' id", request.dosageId()));
 
+        Treatment treatment = this.createTreatment(request, drug, dosage);
+
+        if (treatmentGateway.doesTreatmentExist(treatment))
+            throw new PrescribeTreatmentException(String.format(
+                    "The treatment that is being creating overlaps with the already prescribed drug: start date %s end date %s",
+                    treatment.getStartsOn(), treatment.getStopsOn()));
+
+        treatmentGateway.save(treatment);
+
+        return treatment;
+    }
+
+    private Treatment createTreatment(PrescribeTreatmentRequest request, Drug drug, Dosage dosage) {
         Treatment treatment = new Treatment();
 
         treatment.setDrug(drug);
@@ -50,41 +63,28 @@ public class PrescribeTreatmentUseCase {
         LocalDate startsOn = LocalDate.parse(request.startDate());
         treatment.setStartsOn(startsOn);
 
-        TreatmentPeriod period = new TreatmentPeriod(
-                Integer.parseInt(request.periodAmount()),
-                ChronoUnit.valueOf(request.periodUnit().toUpperCase())
-        );
-
         DirectionModeType type = DirectionModeType.of(request.directionModeType());
         DirectionMode directionMode = new DirectionMode(type);
-
         if (directionMode.isPeriodically()) {
             directionMode.setTaken(Integer.parseInt(request.directionModeTaken()));
             directionMode.setInterval(Integer.parseInt(request.directionModeInterval()));
         }
-
         if (directionMode.isDecreasing()) {
             directionMode.setDelta(Integer.parseInt(request.directionModeDelta()));
             directionMode.setLimit(Integer.parseInt(request.directionModeLimit()));
-
-            int duration = directionMode.calcDecreasingDaysAmountUntilLimitInclusive(dosage.getDailyIntakeAmount());
-            TreatmentPeriod prolonged =  new TreatmentPeriod(duration, ChronoUnit.DAYS);
-            if (prolonged.isLonger(period)) {
-                period = prolonged;
-            }
         }
+        treatment.setDirectionMode(directionMode);
 
+        TreatmentPeriod period = new TreatmentPeriod(
+                Integer.parseInt(request.periodAmount()),
+                ChronoUnit.valueOf(request.periodUnit().toUpperCase()));
+        if (directionMode.isDecreasing()) {
+            int duration = directionMode.calcDecreasingDaysAmountUntilLimitInclusive(dosage.getDailyIntakeAmount());
+            period = period.extendIfDurationLonger(duration);
+        }
         treatment.setPeriod(period);
         treatment.setStopsOn(period.calcEnd(startsOn));
 
-        treatment.setDirectionMode(directionMode);
-
-        if (treatmentGateway.doesTreatmentExist(treatment))
-            throw new PrescribeTreatmentException(String.format(
-                    "The treatment that is being creating overlaps with the already prescribed drug: start date %s end date %s",
-                    treatment.getStartsOn(), treatment.getStopsOn()));
-
-        treatmentGateway.save(treatment);
 
         return treatment;
     }

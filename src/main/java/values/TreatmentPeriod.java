@@ -21,6 +21,14 @@ public class TreatmentPeriod {
         return this.calDurationInDays() > otherUnit.calDurationInDays();
     }
 
+    public TreatmentPeriod extendIfDurationLonger(int days) {
+        TreatmentPeriod prolonged =  new TreatmentPeriod(days, ChronoUnit.DAYS);
+
+        if (prolonged.isLonger(this)) return prolonged;
+
+        return this;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (Objects.isNull(obj)) return false;

@@ -84,4 +84,16 @@ public class TreatmentPeriodTest {
         assertFalse(threeYears.isLonger(forever));
     }
 
+    @Test
+    public void returnsSelfIfDurationIsNotLonger() {
+        assertTrue(fiveDays == fiveDays.extendIfDurationLonger(3));
+    }
+
+    @Test
+    public void returnsExtendedPeriodIfDurationIsLonger() {
+        TreatmentPeriod sevenDays = fiveDays.extendIfDurationLonger(7);
+        assertFalse(fiveDays == sevenDays);
+        assertTrue(sevenDays.isLonger(fiveDays));
+    }
+
 }
