@@ -28,7 +28,7 @@ public class TreatmentTakenConstantlyTest {
     private GetTreatmentUsageUseCase usageUseCase;
 
     private static final LocalDate CURRENT_DATE_APR_05 = LocalDate.parse("2018-04-05");
-    private static final String MAY_16 = "2018-03-16";
+    private static final String MARCH_16 = "2018-03-16";
 
     @Before
     public void setUp() {
@@ -37,7 +37,7 @@ public class TreatmentTakenConstantlyTest {
 
     @Test
     public void isUsedDaily_WhenUsedOnDateBetweenStartAndEndOfTreatment() throws CloneNotSupportedException {
-        Treatment t = givenTreatment(MAY_16, 2, MONTHS);
+        Treatment t = givenTreatment(MARCH_16, 2, MONTHS);
 
         Treatment t2 = (Treatment) t.clone();
         t2.setStartsOn(CURRENT_DATE_APR_05);
@@ -52,15 +52,15 @@ public class TreatmentTakenConstantlyTest {
 
     @Test
     public void isNotUsedDaily_WhenUsedOnDateIsAfterEndOfTreatment() {
-        Treatment t = givenTreatment(MAY_16, 2, DAYS);
+        Treatment t = givenTreatment(MARCH_16, 2, DAYS);
 
         assertFalse(usageUseCase.isUsedOn(t, CURRENT_DATE_APR_05));
     }
 
     @Test
     public void isNotUsedDaily_WhenUsedOnDateIsBeforeStartOfTreatment() {
-        Treatment t = givenTreatment(MAY_16, 2, DAYS);
-        LocalDate date = LocalDate.parse(MAY_16).minusDays(1);
+        Treatment t = givenTreatment(MARCH_16, 2, DAYS);
+        LocalDate date = LocalDate.parse(MARCH_16).minusDays(1);
 
         assertFalse(usageUseCase.isUsedOn(t, date));
     }

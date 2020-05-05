@@ -8,6 +8,6 @@ public class DecreaseMode implements Directional {
 
     @Override
     public boolean isUsedOn(LocalDate startsOn, LocalDate date) {
-        throw new RuntimeException("DecreaseMode not implemented");
+        return true;
     }
 }
